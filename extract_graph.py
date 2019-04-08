@@ -3,7 +3,7 @@ import numpy as np
 import copy
 
 
-def extract(img):
+def extract(img, left, right):
     dim_y = len(img)
     dim_x = len(img[0])
     print(dim_x, dim_y)
@@ -20,17 +20,28 @@ def extract(img):
     # cv2.imshow('thresh', thresh)
     # cv2.waitKey(0)
 
-    cnt = copy.deepcopy(thresh)
-    # cv2.imshow('cnt', cnt)
-    # cv2.waitKey(0)
+    l, r = 0, 0
+    t = 0
+    max_cnt = []
+    print('right left', right, left)
+    print('rl', r, l)
+    while r - l < right - left:
+        print('rl', r, l)
+        t += 1
+        cnt = copy.deepcopy(thresh)
+        # cv2.imshow('cnt', cnt)
+        # cv2.waitKey(0)
 
-    contours, hierarchy = cv2.findContours(cnt, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    cv2.drawContours(cnt, contours, -1, 255, 15)
-    # cv2.imshow('cnt', cnt)
-    # cv2.waitKey(0)
+        contours, hierarchy = cv2.findContours(cnt, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        cv2.drawContours(cnt, contours, -1, 255, t)
+        # cv2.imshow('cnt', cnt)
+        # cv2.waitKey(0)
 
-    contours, hierarchy = cv2.findContours(cnt, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
-    max_cnt = max(contours, key=cv2.contourArea)
+        contours, hierarchy = cv2.findContours(cnt, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        max_cnt = max(contours, key=cv2.contourArea)
+        l = min(max_cnt[:, :, 0])
+        r = max(max_cnt[:, :, 0])
+
     cv2.drawContours(final_mask, [max_cnt], 0, (255, 255, 255), -1)
     # cv2.imshow('final_mask', final_mask)
     # cv2.waitKey(0)

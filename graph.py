@@ -5,11 +5,12 @@ import extract_graph
 import get_graph_dimentions
 
 img = cv2.imread('sample_graph.jpg')
-graph = extract_graph.extract(img)
-# cv2.imshow('graph', graph)
-# cv2.waitKey(0)
 
 x_domain, y_domain, left, right, top, bottom = get_graph_dimentions.get_dim(img)
+
+graph = extract_graph.extract(img, left, right)
+# cv2.imshow('graph', graph)
+# cv2.waitKey(0)
 
 # cv2.rectangle(img, (left, top), (right, bottom), (0, 255, 0))
 # cv2.imshow('img', img)
