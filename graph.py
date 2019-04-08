@@ -1,6 +1,7 @@
 from cv2 import cv2
 import numpy as np
 import copy
+import statistics
 import extract_graph
 import get_graph_dimentions
 
@@ -26,11 +27,11 @@ for time in range(x_domain):
     x = int((time / x_domain) * (right - left))
     col = list(gray[:, x])
     pixel = min(col)
-    for y in range(len(col)):
-        if col[y] == pixel:
-            bpm = 50 + ((bottom - y) / (bottom - top)) * y_domain
-            readings[time] = bpm
-            xy[x] = y
+    pts = [i for i, x in enumerate(col) if x == pixel]
+    y = statistics.mean(pts)
+    bpm = 50 + ((bottom - y) / (bottom - top)) * y_domain
+    readings[time] = bpm
+    xy[x] = int(y)
 
 # Display points
 for x, y in xy.items():

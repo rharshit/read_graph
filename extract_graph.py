@@ -23,10 +23,8 @@ def extract(img, left, right):
     l, r = 0, 0
     t = 0
     max_cnt = []
-    print('right left', right, left)
-    print('rl', r, l)
+
     while r - l < right - left:
-        print('rl', r, l)
         t += 1
         cnt = copy.deepcopy(thresh)
         # cv2.imshow('cnt', cnt)
