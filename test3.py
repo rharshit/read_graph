@@ -5,6 +5,8 @@ import copy
 
 
 def denoise(mask, kernel_size):
+    if kernel_size == 1:
+        return mask
     kernel = np.ones((kernel_size, kernel_size), np.uint8)
     # cls = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
     # # cv2.imshow('cls', cls)
@@ -28,7 +30,6 @@ def denoise(mask, kernel_size):
     return dilate
 
 
-
 def threshold(hsv, bgr, thresh):
     lower = np.array([0, 0, 0])
     upper = np.array([255, 50, thresh])
@@ -45,6 +46,7 @@ def threshold(hsv, bgr, thresh):
 
     mask = cv2.bitwise_and(mask1, mask2)
     return mask
+
 
 flist = glob.glob("graphs/*_*.jpg")
 flist.sort()
@@ -140,7 +142,7 @@ for file in flist:
     #     cv2.imshow("size: "+str(size), new_mask)
     #     cv2.waitKey(0)
     #
-    new_mask = denoise(mask, 2)
+    new_mask = denoise(mask, 3)
 
     bg = np.ones((w, h, 3), np.uint8)
     bg = cv2.bitwise_not(bg, mask=~new_mask)
@@ -149,8 +151,35 @@ for file in flist:
 
     res = cv2.bitwise_or(img, img, mask=new_mask)
     res = cv2.bitwise_or(res, bg)
+    cv2.imshow('res', cv2.pyrDown(res))
+
+    def update(self):
+        # cv2.imshow('res', cv2.pyrDown(res))
+        thresh = cv2.getTrackbarPos("thresh", 'res')
+        size = cv2.getTrackbarPos("size", 'res')
+
+        thresh = 160 if thresh == -1 else thresh
+        size = 3 if size == -1 else size
+        print(thresh, size)
+        mask = threshold(hsv, blur_chan, thresh)
+        new_mask = denoise(mask, size)
+
+        bg = np.ones((w, h, 3), np.uint8)
+        bg = cv2.bitwise_not(bg, mask=~new_mask)
+        # cv2.imshow('bg', bg)
+        # cv2.waitKey(0)
+
+        res = cv2.bitwise_or(img, img, mask=new_mask)
+        res = cv2.bitwise_or(res, bg)
+        cv2.imshow('res', cv2.pyrDown(res))
+
+
+    update(None)
+    cv2.createTrackbar('thresh', 'res', 160, 200, update)
+    cv2.createTrackbar('size', 'res', 3, 20, update)
+    cv2.imshow('res', cv2.pyrDown(res))
 
     cv2.imshow('img', cv2.pyrDown(img))
-    cv2.imshow("res", cv2.pyrDown(res))
+    # cv2.imshow("res", cv2.pyrDown(res))
     cv2.waitKey(0)
     cv2.destroyAllWindows()
