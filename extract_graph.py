@@ -6,7 +6,6 @@ import copy
 def extract(img, left, right):
     dim_y = len(img)
     dim_x = len(img[0])
-    print(dim_x, dim_y)
     # cv2.imshow('', img)
     # cv2.waitKey(0)
 
@@ -24,6 +23,7 @@ def extract(img, left, right):
     t = 0
     max_cnt = []
 
+    print("_____________")
     while r - l < right - left:
         t += 1
         cnt = copy.deepcopy(thresh)
@@ -37,8 +37,12 @@ def extract(img, left, right):
 
         contours, hierarchy = cv2.findContours(cnt, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
         max_cnt = max(contours, key=cv2.contourArea)
+        # print(max_cnt)
+        # for tmp in max_cnt:
+        #     print(tmp)
         l = min(max_cnt[:, :, 0])
         r = max(max_cnt[:, :, 0])
+        # print(l, r)
 
     cv2.drawContours(final_mask, [max_cnt], 0, (255, 255, 255), -1)
     # cv2.imshow('final_mask', final_mask)

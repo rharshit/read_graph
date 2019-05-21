@@ -12,6 +12,7 @@ def get_dim(img):
     lines = cv2.HoughLinesP(edges, 1, np.pi / 180, 10, minLineLength=50)
     for line in lines:
         for x1, y1, x2, y2 in line:
+            # print(x1, y1, x2, y2)
             if abs(x1 - x2) < 20:
                 x = int((x1 + x2) / 2)
                 l, r = min(l, x), max(r, x)
