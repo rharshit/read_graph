@@ -49,16 +49,20 @@ for file in flist:
     # cv2.imshow('dilate_clean', cv2.pyrDown(dilate))
     # cv2.waitKey(0)
 
-    norm_num_blocks = 4
+    bilateral = cv2.bilateralFilter(dilate, 10, 10, 10)
+    # cv2.imshow('bilateral', cv2.pyrDown(bilateral))
+    # cv2.waitKey(0)
+
+    norm_num_blocks = 3
     norm_kernel_w = w//norm_num_blocks
     norm_kernel_h = h//norm_num_blocks
     norm = np.zeros((h, w), np.uint8)
 
-    for rows in range(0, w, norm_kernel_w):
-        for cols in range(0, h, norm_kernel_h):
-            tmp = copy.deepcopy(dilate)
+    for rows in range(0, w, norm_kernel_w//2):
+        for cols in range(0, h, norm_kernel_h//2):
+            tmp = copy.deepcopy(bilateral)
             cv2.rectangle(tmp, (rows, cols), (rows+norm_kernel_w, cols+norm_kernel_h), (0, 255, 0), 2)
-            roi = dilate[cols:cols+norm_kernel_h, rows:rows+norm_kernel_w]
+            roi = bilateral[cols:cols+norm_kernel_h, rows:rows+norm_kernel_w]
             norm[cols:cols+norm_kernel_h, rows:rows+norm_kernel_w] = cv2.normalize(roi, None, 0, 255, cv2.NORM_MINMAX)
             # cv2.imshow('dil', dilate[cols:cols+norm_kernel_h, rows:rows+norm_kernel_w])
             # cv2.imshow('norm', norm[cols:cols+norm_kernel_h, rows:rows+norm_kernel_w])
@@ -80,20 +84,43 @@ for file in flist:
 
     linesP = cv2.HoughLinesP(~erode, 1, np.pi / 2, 10, None, w // 20, 30)
 
-    output = np.ones((h, w), np.uint8) * 255
+    line_output = np.ones((h, w), np.uint8) * 255
     for x1, y1, x2, y2 in linesP[:, 0]:
         if abs(x1 - x2) > abs(y1 - y1):
-            cv2.line(output, (x1, y1), (x2, y2), 0, 2)
+            cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 1)
+            cv2.line(line_output, (x1, y1), (x2, y2), 0, 1)
 
-    cv2.imshow('lines', cv2.pyrDown(output))
+    cv2.imshow('lines', cv2.pyrDown(img))
+    cv2.imshow('line_output', cv2.pyrDown(line_output))
     cv2.waitKey(0)
 
-    # lines = cv2.HoughLinesP(output, 1, np.pi / 360, w//2, minLineLength=w//2, maxLineGap=10)
+    # lines = cv2.HoughLinesP(line_output, 1, np.pi / 1440, w//5, minLineLength=w//5, maxLineGap=50)
     # interpolate = np.ones((h, w), np.uint8)*255
     # for x1, y1, x2, y2 in lines[:, 0]:
-    #     cv2.line(interpolate, (x1, y1), (x2, y2), 0, 1)
+    #     cv2.line(interpolate, (x1, y1), (x2, y2), 254, 1)
     #
     # cv2.imshow('interpolate', cv2.pyrDown(interpolate))
+    # cv2.waitKey(0)
+
+    # edges = cv2.Canny(line_output, 50, 150, apertureSize=3)
+    # cv2.imshow('edges', cv2.pyrDown(edges))
+    # cv2.waitKey(0)
+    #
+    # line_output_hough = np.ones((h, w), np.uint8) * 255
+    # lines = cv2.HoughLines(edges, 1, np.pi / 180, 250)
+    # for rho, theta in lines[:, 0]:
+    #     a = np.cos(theta)
+    #     b = np.sin(theta)
+    #     x0 = a * rho
+    #     y0 = b * rho
+    #     x1 = int(x0 + w * (-b))
+    #     y1 = int(y0 + h * (a))
+    #     x2 = int(x0 - w * (-b))
+    #     y2 = int(y0 - h * (a))
+    #
+    #     cv2.line(line_output_hough, (x1, y1), (x2, y2), (0, 0, 255), 2)
+    #
+    # cv2.imshow('line_output_hough', cv2.pyrDown(line_output_hough))
     # cv2.waitKey(0)
 
     cv2.destroyAllWindows()
