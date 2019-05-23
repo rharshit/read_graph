@@ -2,6 +2,7 @@ import cv2 as cv2
 import numpy as np
 import glob, os
 import copy
+from statistics import mean
 from skimage.exposure import rescale_intensity
 
 kernel_size = 21
@@ -23,6 +24,7 @@ for file in flist:
 
     img = cv2.imread(file)
     h, w, _ = img.shape
+    print("w:", w, "h:", h)
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     cv2.imshow('gray', cv2.pyrDown(gray))
@@ -87,11 +89,37 @@ for file in flist:
     line_output = np.ones((h, w), np.uint8) * 255
     for x1, y1, x2, y2 in linesP[:, 0]:
         if abs(x1 - x2) > abs(y1 - y1):
-            cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 1)
-            cv2.line(line_output, (x1, y1), (x2, y2), 0, 1)
+            cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+            cv2.line(line_output, (x1, y1), (x2, y2), 0, 2)
 
     cv2.imshow('lines', cv2.pyrDown(img))
     cv2.imshow('line_output', cv2.pyrDown(line_output))
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    lines_final = cv2.HoughLinesP(~line_output, 1, np.pi /720, w//4, None, w//3, w//10)
+    slopes = []
+    for x1, y1, x2, y2 in lines_final[:, 0]:
+        if abs(x1 - x2) > abs(y1 - y1):
+            slope = (y1-y2)/(x1-x2)
+            slopes.append(slope)
+            cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 5)
+            cv2.line(line_output, (x1, y1), (x2, y2), 0, 5)
+    rotation = mean(slopes)
+    print('rotation', rotation)
+    angle = np.arctan(rotation) * 180 / np.pi
+    print('angle', angle)
+    cv2.imshow('lines', cv2.pyrDown(img))
+    cv2.imshow('line_output', cv2.pyrDown(line_output))
+    cv2.waitKey(0)
+
+    M = cv2.getRotationMatrix2D((h/2, w/2), angle, 1)
+    print(M)
+    img_fixed = ~cv2.warpAffine(~img, M, (w, h))
+    lines_fixed = ~cv2.warpAffine(~line_output, M, (w, h))
+
+    cv2.imshow('img_fixed', cv2.pyrDown(img_fixed))
+    cv2.imshow('lines_fixed', cv2.pyrDown(lines_fixed))
     cv2.waitKey(0)
 
     # lines = cv2.HoughLinesP(line_output, 1, np.pi / 1440, w//5, minLineLength=w//5, maxLineGap=50)
