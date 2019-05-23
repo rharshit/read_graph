@@ -27,8 +27,8 @@ for file in flist:
     print("w:", w, "h:", h)
 
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    cv2.imshow('gray', cv2.pyrDown(gray))
-    cv2.waitKey(0)
+    # cv2.imshow('gray', cv2.pyrDown(gray))
+    # cv2.waitKey(0)
 
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(h // 15, w // 15))
     cl_gray = clahe.apply(gray)
@@ -87,39 +87,64 @@ for file in flist:
     linesP = cv2.HoughLinesP(~erode, 1, np.pi / 2, 10, None, w // 20, 30)
 
     line_output = np.ones((h, w), np.uint8) * 255
+    img_tmp = copy.deepcopy(img)
     for x1, y1, x2, y2 in linesP[:, 0]:
         if abs(x1 - x2) > abs(y1 - y1):
-            cv2.line(img, (x1, y1), (x2, y2), (255, 0, 0), 2)
+            cv2.line(img_tmp, (x1, y1), (x2, y2), (255, 0, 0), 2)
             cv2.line(line_output, (x1, y1), (x2, y2), 0, 2)
 
-    cv2.imshow('lines', cv2.pyrDown(img))
-    cv2.imshow('line_output', cv2.pyrDown(line_output))
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.imshow('lines', cv2.pyrDown(img_tmp))
+    # cv2.imshow('line_output', cv2.pyrDown(line_output))
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
-    lines_final = cv2.HoughLinesP(~line_output, 1, np.pi /720, w//4, None, w//3, w//10)
+    lines_final = cv2.HoughLinesP(~line_output, 1, np.pi /720, w//20, None, w//20, w//10)
+
     slopes = []
+    line_extend_length = w//20
+
     for x1, y1, x2, y2 in lines_final[:, 0]:
         if abs(x1 - x2) > abs(y1 - y1):
             slope = (y1-y2)/(x1-x2)
             slopes.append(slope)
-            cv2.line(img, (x1, y1), (x2, y2), (0, 255, 0), 5)
-            cv2.line(line_output, (x1, y1), (x2, y2), 0, 5)
+            m = slope
+            # print('m', m)
+
+            X1 = (x1 if x1 > x2 else x2) + line_extend_length * np.cos(np.arctan(m))
+            Y1 = (y1 if x1 > x2 else y2) + line_extend_length * np.sin(np.arctan(m))
+            X2 = (x2 if x1 > x2 else x1) - line_extend_length * np.cos(np.arctan(m))
+            Y2 = (y2 if x1 > x2 else y1) - line_extend_length * np.sin(np.arctan(m))
+
+            # print(x1, X1)
+            # print(x2, X2)
+            # print(y1, Y1)
+            # print(y2, Y2)
+
+            cv2.line(img_tmp, (int(X1), int(Y1)), (int(X2), int(Y2)), (0, 127, 0), 1)
+            cv2.line(line_output, (int(X1), int(Y1)), (int(X2), int(Y2)), 63, 1)
+
+            cv2.line(img_tmp, (x1, y1), (x2, y2), (0, 255, 0), 3)
+            cv2.line(line_output, (x1, y1), (x2, y2), 0, 3)
+
     rotation = mean(slopes)
-    print('rotation', rotation)
+    # print('rotation', rotation)
     angle = np.arctan(rotation) * 180 / np.pi
     print('angle', angle)
-    cv2.imshow('lines', cv2.pyrDown(img))
-    cv2.imshow('line_output', cv2.pyrDown(line_output))
-    cv2.waitKey(0)
+    # cv2.imshow('lines', cv2.pyrDown(img_tmp))
+    # cv2.imshow('line_output', cv2.pyrDown(line_output))
+    # cv2.waitKey(0)
 
     M = cv2.getRotationMatrix2D((h/2, w/2), angle, 1)
-    print(M)
-    img_fixed = ~cv2.warpAffine(~img, M, (w, h))
+    # print(M)
+    img_fixed = ~cv2.warpAffine(~img_tmp, M, (w, h))
     lines_fixed = ~cv2.warpAffine(~line_output, M, (w, h))
 
-    cv2.imshow('img_fixed', cv2.pyrDown(img_fixed))
-    cv2.imshow('lines_fixed', cv2.pyrDown(lines_fixed))
+    cv2.imshow(file+'img_fixed', cv2.pyrDown(img_fixed))
+    cv2.imshow('lines_fixed', lines_fixed)
+    cv2.waitKey(0)
+
+    cls = cv2.morphologyEx(lines_fixed, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8), iterations=3)
+    cv2.imshow('cls', cls)
     cv2.waitKey(0)
 
     # lines = cv2.HoughLinesP(line_output, 1, np.pi / 1440, w//5, minLineLength=w//5, maxLineGap=50)
