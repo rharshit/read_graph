@@ -35,22 +35,28 @@ for file in flist:
     angle_threshold_h = 15
 
     img = cv2.imread(file)
+    cv2.imshow('img', cv2.pyrDown(img))
+
     h, w, _ = img.shape
     print("w:", w, "h:", h)
 
     blur = cv2.GaussianBlur(img, (3, 3), 0)
-    cv2.imshow('blur', cv2.pyrDown(blur))
+    # cv2.imshow('blur', cv2.pyrDown(blur))
     # cv2.waitKey(0)
 
     block_size_w = w // num_blocks_h
     block_size_h = h // num_blocks_v
     # print("block size", block_size_h, block_size_w)
 
+    angle_deviation_threshold = 2
+
     tmp = copy.deepcopy(img)
     grid = np.ones((h, w), np.uint8) * 255
     for row in range(0, w, block_size_w // 2):
         for col in range(0, h, block_size_h // 2):
             block = blur[col:col + block_size_h, row:row + block_size_w]
+            # cv2.imshow('block', block)
+            # cv2.waitKey(0)
             norm = cv2.normalize(block, None, 0, 255, cv2.NORM_MINMAX)
             # cv2.rectangle(tmp, (row, col), (row+block_size_w, col+block_size_h), (255, 0, 255), 2)
             # cv2.imshow("block:"+str(row)+","+str(col), block)
@@ -96,7 +102,6 @@ for file in flist:
                         angles_v)
                     # print('mean v', mean_v)
 
-                angle_deviation_threshold = 2
                 if v_lines_exist or h_lines_exist:
                     for x1, y1, x2, y2 in lines[:, 0]:
                         # print(x1, y1, x2, y2)
@@ -125,16 +130,35 @@ for file in flist:
             # cv2.imshow('lines', norm)
             # cv2.waitKey(0)
 
-    cv2.imshow('img', cv2.pyrDown(img))
-    cv2.imshow('grid', cv2.pyrDown(grid))
-    cv2.imshow('tmp', cv2.pyrDown(tmp))
+
+    # cv2.imshow('img', cv2.pyrDown(img))
+    # cv2.imshow('grid', cv2.pyrDown(grid))
+    # cv2.imshow('tmp', cv2.pyrDown(tmp))
     # cv2.waitKey(0)
 
+    class BlockDetail:
+        def __init__(self):
+            self.v_line_start = []
+            self.v_line_end = []
+            self.h_line_start = []
+            self.h_line_end = []
+            self.v_angle = None
+            self.h_angle = None
+
+        def print(self):
+            print('v_line_start', self.v_line_start)
+            print('v_line_end', self.v_line_end)
+            print('h_line_start', self.h_line_start)
+            print('h_line_start', self.h_line_end)
+            print('v_angle', self.v_angle)
+            print('h_angle', self.h_angle)
+
+
+    block_details = {}
     max_num_blocks = 10
 
     block_size = int(max(w, h) // max_num_blocks)
 
-    tmp = copy.deepcopy(img)
     tmp_grid = copy.deepcopy(grid)
     tmp_grid = cv2.cvtColor(tmp_grid, cv2.COLOR_GRAY2BGR)
     grid_clean = np.ones((h, w), np.uint8) * 255
@@ -148,10 +172,15 @@ for file in flist:
 
     for row in range(int(0), int(w), int(step)):
         # print('row', row)
+        nr = int(row / step)
         for col in range(int(0), int(h), int(step)):
+            nc = int(col / step)
             # print('col', col)
             # print("rc", row, col)
-            block = tmp[col:col + block_size, row:row + block_size]
+            # print(nr, nc)
+
+            bd = BlockDetail()
+
             block_grid = grid[col:col + block_size, row:row + block_size]
             block_grid_bgr = cv2.cvtColor(block_grid, cv2.COLOR_GRAY2BGR)
             block_grid_clean = np.ones((block_grid.shape[0:2]), np.uint8) * 255
@@ -204,10 +233,12 @@ for file in flist:
                 angle_median_v = 0
                 if len(angle_v) > 0:
                     angle_median_v = abs(median(angle_v))
+                    bd.v_angle = angle_median_v
 
                 angle_median_h = 90
                 if len(angle_h) > 0:
                     angle_median_h = abs(median(angle_h))
+                    bd.h_angle = angle_median_h
 
                 # print('angle_v', angle_v)
                 # print('median_v', angle_median_v)
@@ -271,33 +302,50 @@ for file in flist:
                     s = np.sin(theta)
                     x0 = rho * c
                     y0 = rho * s
-                    x1 = int(x0 + 1000 * s)
-                    y1 = int(y0 - 1000 * c)
-                    x2 = int(x0 - 1000 * s)
-                    y2 = int(y0 + 1000 * c)
+
+                    # print('sin', s)
+                    # print('cos', c)
 
                     # print(x1, y1, x2, y2)
 
                     if rho in separate_rho_h or rho in separate_rho_v:
                         # print(rho, angle)
-                        if angle_median_v - angle_deviation_threshold <= abs(angle) <= angle_median_v + angle_deviation_threshold and rho in separate_rho_v:
+                        if angle_median_v - angle_deviation_threshold <= abs(
+                                angle) <= angle_median_v + angle_deviation_threshold and rho in separate_rho_v:
                             # print('vert_line')
+                            x1 = block_size
+                            y1 = int(y0 - abs((x0-x1) / s) * c)
+                            x2 = 0
+                            y2 = int(y0 + abs((x2-x0) / s) * c)
                             # print('v_coord', x1, y1, x2, y2)
+                            bd.h_line_start.append(int((nc * step) + y1))
+                            bd.h_line_end.append(int((nc * step) + y2))
                             block_rho_v.append(rho)
                             cv2.line(block_grid_bgr, (x1, y1), (x2, y2), (0, 255, 0), 4)
-                            cv2.line(block_grid_clean, (x1, y1), (x2, y2), 0, 1)
+                            cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)), (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
                             continue
-                        elif angle_median_h - angle_deviation_threshold <= abs(angle) <= angle_median_h + angle_deviation_threshold and rho in separate_rho_h:
+                        elif angle_median_h - angle_deviation_threshold <= abs(
+                                angle) <= angle_median_h + angle_deviation_threshold and rho in separate_rho_h:
                             # print('hori_line')
-                            # print('v_coord', x1, y1, x2, y2)
+                            y1 = 0
+                            x1 = int(x0 + ((y0-y1) / c) * s)
+                            y2 = block_size
+                            x2 = int(x0 - ((y2-y1) / c) * s)
+                            # print('h_coord', x1, y1, x2, y2)
+                            bd.v_line_start.append(int((nr * step) + x1))
+                            bd.v_line_end.append(int((nr * step) + x2))
                             block_rho_h.append(rho)
                             cv2.line(block_grid_bgr, (x1, y1), (x2, y2), (255, 0, 0), 4)
-                            cv2.line(block_grid_clean, (x1, y1), (x2, y2), 0, 1)
+                            cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)), (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
                             continue
                         else:
                             # print('discarded_line')
+                            x1 = int(x0 + 1000 * s)
+                            y1 = int(y0 - 1000 * c)
+                            x2 = int(x0 - 1000 * s)
+                            y2 = int(y0 + 1000 * c)
                             cv2.line(block_grid_bgr, (x1, y1), (x2, y2), (0, 0, 255), 4)
                             # cv2.line(tmp_grid, (row + x1, col + y1), (row + x2, col + y2), 127, 1)
                     else:
@@ -325,12 +373,22 @@ for file in flist:
             # print("rho h", block_rho_h)
             # print()
 
+            # print((nr, nc))
+            # bd.print()
+            # print()
+            block_details[(nr, nc)] = bd
+
             tmp_grid[col:col + block_size, row:row + block_size] = block_grid_bgr
-            grid_clean[col:col + block_size, row:row + block_size] &= block_grid_clean
+            # grid_clean[col:col + block_size, row:row + block_size] &= block_grid_clean
             # cv2.imshow('grid', cv2.pyrDown(tmp_grid))
             # cv2.imshow('block_grid', block_grid_bgr)
-            # cv2.imshow('grid_clean', cv2.pyrDown(grid_clean))
-            # cv2.waitKey(0)
+            cv2.imshow('grid_clean', cv2.pyrDown(grid_clean))
+            cv2.waitKey(0)
+
+    # for key, val in block_details.items():
+    #     print(key)
+    #     val.print()
+    #     print()
 
     print('rho_diff_v', rho_diff_v)
     print('rho_diff_h', rho_diff_h)
@@ -342,12 +400,13 @@ for file in flist:
 
     end_time = time.time()
     process_time = end_time - start_time
-    print("processed in",process_time)
+    print("processed in", process_time)
 
     cv2.imshow('grid_clean', cv2.pyrDown(grid_clean))
-    cv2.imshow('grid', cv2.pyrDown(tmp_grid))
+    # cv2.imshow('tmp', cv2.pyrDown(tmp))
+    # cv2.imshow('grid', cv2.pyrDown(tmp_grid))
     cv2.waitKey(0)
 
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
 cv2.destroyAllWindows()
