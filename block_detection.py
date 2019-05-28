@@ -149,6 +149,25 @@ for file in flist:
             self.v_angle = None
             self.h_angle = None
 
+            self.prob_v_line_start = []
+            self.prob_v_line_end = []
+            self.prob_v_line_mid = []
+            self.prob_v_line = []
+            self.prob_h_line_start = []
+            self.prob_h_line_end = []
+            self.prob_h_line_mid = []
+            self.prob_h_line = []
+            self.prob_v_angle = None
+            self.prob_h_angle = None
+
+        def del_v(self, i):
+            del self.v_line[i]
+            del self.v_line_mid[i]
+
+        def del_h(self, i):
+            del self.h_line[i]
+            del self.h_line_mid[i]
+
         def print(self):
             # print('v_line_start', self.v_line_start)
             print('v_line_mid', self.v_line_mid)
@@ -178,11 +197,13 @@ for file in flist:
 
     # print('step', step)
 
-    for row in range(int(0), int(w), int(step)):
+    for nr in range(0, w // step + 1):
         # print('row', row)
-        nr = int(row / step)
-        for col in range(int(0), int(h), int(step)):
-            nc = int(col / step)
+        # nr = int(row / step)
+        row = nr * step
+        for nc in range(0, h // step + 1):
+            # nc = int(col / step)
+            col = nc * step
             # print('col', col)
             # print("rc", row, col)
             # print(nr, nc)
@@ -322,34 +343,36 @@ for file in flist:
                                 angle) <= angle_median_v + angle_deviation_threshold and rho in separate_rho_v:
                             # print('vert_line')
                             x1 = block_size
-                            y1 = int(y0 - abs((x0-x1) / s) * c)
+                            y1 = int(y0 - abs((x0 - x1) / s) * c)
                             x2 = 0
-                            y2 = int(y0 + abs((x2-x0) / s) * c)
-                            # print('v_coord', x1, y1, x2, y2)
-                            bd.h_line_start.append(int((nc * step) + y1))
-                            bd.h_line_end.append(int((nc * step) + y2))
-                            bd.h_line_mid.append(int((nc * step) + (y1 + y2)/2))
+                            y2 = int(y0 + abs((x2 - x0) / s) * c)
+                            print('v_coord', x1, y1, x2, y2)
+                            # bd.h_line_start.append(int((nc * step) + y1))
+                            # bd.h_line_end.append(int((nc * step) + y2))
+                            # bd.h_line_mid.append(int((nc * step) + (y1 + y2)/2))
                             bd.h_line.append((int((nc * step) + y1), int((nc * step) + y2)))
                             block_rho_v.append(rho)
                             cv2.line(block_grid_bgr, (x1, y1), (x2, y2), (0, 255, 0), 4)
-                            cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)), (int((nr * step) + x2), int((nc * step) + y2)), 0, 3)
+                            cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
+                                     (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
                             continue
                         elif angle_median_h - angle_deviation_threshold <= abs(
                                 angle) <= angle_median_h + angle_deviation_threshold and rho in separate_rho_h:
                             # print('hori_line')
                             y1 = 0
-                            x1 = int(x0 + ((y0-y1) / c) * s)
+                            x1 = int(x0 + ((y0 - y1) / c) * s)
                             y2 = block_size
-                            x2 = int(x0 - ((y2-y1) / c) * s)
-                            # print('h_coord', x1, y1, x2, y2)
-                            bd.v_line_start.append(int((nr * step) + x1))
-                            bd.v_line_end.append(int((nr * step) + x2))
-                            bd.v_line_mid.append(int((nr * step) + (x1 + x2)/2))
+                            x2 = int(x0 - ((y2 - y1) / c) * s)
+                            print('h_coord', x1, y1, x2, y2)
+                            # bd.v_line_start.append(int((nr * step) + x1))
+                            # bd.v_line_end.append(int((nr * step) + x2))
+                            # bd.v_line_mid.append(int((nr * step) + (x1 + x2)/2))
                             bd.v_line.append((int((nr * step) + x1), int((nr * step) + x2)))
                             block_rho_h.append(rho)
                             cv2.line(block_grid_bgr, (x1, y1), (x2, y2), (255, 0, 0), 4)
-                            cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)), (int((nr * step) + x2), int((nc * step) + y2)), 0, 3)
+                            cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
+                                     (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
                             continue
                         else:
@@ -374,8 +397,8 @@ for file in flist:
                     rho_diff_h.append(separate_rho_h[i] - separate_rho_h[i - 1])
 
             else:
-                continue
                 # print('no lines found')
+                continue
 
             block_rho_v.sort()
             block_rho_h.sort()
@@ -386,9 +409,11 @@ for file in flist:
             # print()
 
             bd.v_line.sort()
-            bd.v_line_mid.sort()
+            bd.v_line_mid = [(a + b) / 2 for (a, b) in bd.v_line]
+            # bd.v_line_mid.sort()
             bd.h_line.sort()
-            bd.h_line_mid.sort()
+            bd.h_line_mid = [(a + b) / 2 for (a, b) in bd.h_line]
+            # bd.h_line_mid.sort()
 
             print((nr, nc))
             bd.print()
@@ -423,16 +448,63 @@ for file in flist:
     # cv2.imshow('tmp', cv2.pyrDown(tmp))
     # cv2.imshow('grid', cv2.pyrDown(tmp_grid))
 
+    grid_cleaner = np.ones((h, w), np.uint8) * 255
+    block_details_corrected = copy.deepcopy(block_details)
+
+    for nr in range(0, w // step + 1):
+        row = nr * step
+        for nc in range(0, h // step + 1):
+            col = nc * step
+            if (nr, nc) in block_details_corrected.keys():
+                bd = block_details_corrected[(nr, nc)]
+                lh, lv = 0, 0
+                while lv < len(bd.v_line_mid) - 1:
+                    print('v', lv)
+                    if bd.v_line_mid[lv + 1] - bd.v_line_mid[lv] <= grid_h//3:
+                        ((a1, b1), (a2, b2)) = (bd.v_line[lv], bd.v_line[lv + 1])
+                        bd.v_line[lv] = ((a1 + a2) // 2, (b1 + b2) // 2)
+                        # bd.v_line_mid = [(a+b)/2 for a, b in bd.v_line[v]]
+                        bd.del_v(lv+1)
+                    else:
+                        lv += 1
+                while lh < len(bd.h_line_mid) - 1:
+                    print('h', lh)
+                    if bd.h_line_mid[lh + 1] - bd.h_line_mid[lh] <= grid_w//3:
+                        ((a1, b1), (a2, b2)) = (bd.h_line[lh], bd.h_line[lh + 1])
+                        bd.h_line[lh] = ((a1 + a2) // 2, (b1 + b2) // 2)
+                        # bd.h_line_mid = [(a+b)/2 for a, b in bd.h_line[h]]
+                        bd.del_h(lh+1)
+                    else:
+                        lh += 1
+
+                print('processed')
+                print((nr, nc))
+                bd.print()
+                for [x1, x2] in bd.v_line:
+                    y1, y2 = col, col + block_size
+                    print(x1, y1, x2, y2)
+                    cv2.line(grid_cleaner, (x1, y1), (x2, y2), 0, 1)
+                for [y1, y2] in bd.h_line:
+                    x1, x2 = row + block_size, row
+                    print(x1, y1, x2, y2)
+                    cv2.line(grid_cleaner, (x1, y1), (x2, y2), 0, 1)
+
+            else:
+                print('block not found', nr, nc)
+            cv2.imshow('grid_cleaner', cv2.pyrDown(grid_cleaner))
+            # cv2.waitKey(0)
+
     # average_color = img.mean(axis=0).mean(axis=0)
     # print('avg color', average_color)
     # avg_mask = np.ones((h, w, 3), np.uint8)
     # avg_mask[:] = average_color
-    avg_mask = cv2.filter2D(img, -1, np.ones((101, 101), np.uint8))
-    white_mask = cv2.bitwise_and(cv2.cvtColor(~grid_clean, cv2.COLOR_GRAY2BGR), avg_mask)
-    cv2.imshow('white_mask', cv2.pyrDown(white_mask))
+    # avg_mask = cv2.filter2D(img, -1, np.ones((101, 101), np.uint8))
+    # white_mask = cv2.bitwise_and(cv2.cvtColor(~grid_cleaner, cv2.COLOR_GRAY2BGR), avg_mask)
+    # cv2.imshow('white_mask', cv2.pyrDown(white_mask))
+    #
+    # masked = cv2.bitwise_or(img, white_mask)
+    # cv2.imshow('masked', cv2.pyrDown(masked))
 
-    masked = cv2.bitwise_or(img, white_mask)
-    cv2.imshow('masked', cv2.pyrDown(masked))
     cv2.waitKey(0)
 
     # cv2.destroyAllWindows()
