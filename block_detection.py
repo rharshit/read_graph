@@ -48,8 +48,8 @@ for file in flist:
     # cv2.imshow('denoise', cv2.pyrDown(denoise))
     # cv2.waitKey(0)
 
-    kernel_h = np.array([[0,0,0],[1,1,1],[0,0,0]], np.uint8)
-    kernel_v = np.array([[0,1,0],[0,1,0],[0,1,0]], np.uint8)
+    kernel_h = np.array([[0, 0, 0], [1, 1, 1], [0, 0, 0]], np.uint8)
+    kernel_v = np.array([[0, 1, 0], [0, 1, 0], [0, 1, 0]], np.uint8)
     erode_h = cv2.erode(denoise, kernel_h)
     # cv2.imshow('erode_h', cv2.pyrDown(erode_h))
     # cv2.waitKey(0)
@@ -161,6 +161,8 @@ for file in flist:
             self.h_line = []
             self.v_angle = None
             self.h_angle = None
+            self.diff_x = None  # x1-2x1
+            self.diff_y = None  # y1-y2
 
             self.prob_v_line_start = []
             self.prob_v_line_end = []
@@ -181,7 +183,20 @@ for file in flist:
             del self.h_line[i]
             del self.h_line_mid[i]
 
+        def calc_diff_x(self):
+            if len(self.v_line) > 0:
+                self.diff_x = sum([(x1-x2) for (x1, x2) in self.v_line])/len(self.v_line)
+
+        def calc_diff_y(self):
+            if len(self.h_line) > 0:
+                self.diff_y = sum([(y1-y2) for (y1, y2) in self.h_line])/len(self.h_line)
+
+        def calc_line_diff(self):
+            self.calc_diff_x()
+            self.calc_diff_y()
+
         def print(self):
+            print()
             # print('v_line_start', self.v_line_start)
             print('v_line_mid', self.v_line_mid)
             # print('v_line_end', self.v_line_end)
@@ -192,6 +207,9 @@ for file in flist:
             print('h_line', self.h_line)
             print('v_angle', self.v_angle)
             print('h_angle', self.h_angle)
+            print('diff_x', self.diff_x)
+            print('diff_y', self.diff_y)
+            print()
 
 
     block_details = {}
@@ -445,8 +463,8 @@ for file in flist:
     #     val.print()
     #     print()
 
-    print('rho_diff_v', rho_diff_v)
-    print('rho_diff_h', rho_diff_h)
+    # print('rho_diff_v', rho_diff_v)
+    # print('rho_diff_h', rho_diff_h)
 
     grid_w = median(rho_diff_v)
     grid_h = median(rho_diff_h)
@@ -456,6 +474,8 @@ for file in flist:
     cv2.imshow('grid_clean', cv2.pyrDown(grid_clean))
     # cv2.imshow('tmp', cv2.pyrDown(tmp))
     # cv2.imshow('grid', cv2.pyrDown(tmp_grid))
+
+    print('cleaning')
 
     grid_cleaner = np.ones((h, w), np.uint8) * 255
     block_details_corrected = copy.deepcopy(block_details)
@@ -469,26 +489,27 @@ for file in flist:
                 lh, lv = 0, 0
                 while lv < len(bd.v_line_mid) - 1:
                     # print('v', lv)
-                    if bd.v_line_mid[lv + 1] - bd.v_line_mid[lv] <= grid_h//3:
+                    if bd.v_line_mid[lv + 1] - bd.v_line_mid[lv] <= grid_h // 3:
                         ((a1, b1), (a2, b2)) = (bd.v_line[lv], bd.v_line[lv + 1])
                         bd.v_line[lv] = ((a1 + a2) // 2, (b1 + b2) // 2)
                         # bd.v_line_mid = [(a+b)/2 for a, b in bd.v_line[v]]
-                        bd.del_v(lv+1)
+                        bd.del_v(lv + 1)
                     else:
                         lv += 1
                 while lh < len(bd.h_line_mid) - 1:
                     # print('h', lh)
-                    if bd.h_line_mid[lh + 1] - bd.h_line_mid[lh] <= grid_w//3:
+                    if bd.h_line_mid[lh + 1] - bd.h_line_mid[lh] <= grid_w // 3:
                         ((a1, b1), (a2, b2)) = (bd.h_line[lh], bd.h_line[lh + 1])
                         bd.h_line[lh] = ((a1 + a2) // 2, (b1 + b2) // 2)
                         # bd.h_line_mid = [(a+b)/2 for a, b in bd.h_line[h]]
-                        bd.del_h(lh+1)
+                        bd.del_h(lh + 1)
                     else:
                         lh += 1
                 bd.v_line_mid = [(a + b) / 2 for (a, b) in bd.v_line]
                 bd.h_line_mid = [(a + b) / 2 for (a, b) in bd.h_line]
 
                 grid_deviation = 0.10
+
 
                 # lh, lv = 0, 0
                 # h_grid_deviation, v_grid_deviation = (x*grid_deviation for x in (grid_h, grid_w))
@@ -550,7 +571,7 @@ for file in flist:
                     valid[0] = True
                     ll = 0
                     while ll < len(line_mid2) - 1:
-                        print('ll', ll)
+                        # print('ll', ll)
                         if not valid[ll]:
                             if first_fail + ll not in to_del2:
                                 to_del2.append(first_fail + ll)
@@ -590,33 +611,35 @@ for file in flist:
                     cnt2 = sum([1 if x == True else 0 for x in valid])
                     return to_del1 if cnt1 >= cnt2 else to_del2
 
+
                 if len(bd.v_line_mid) > 0:
                     invalid_v = invalid_lines(bd.v_line_mid, grid_h)
                     n_del = 0
                     # print('invalid_v', invalid_v)
                     for i in invalid_v:
-                        bd.del_v(int(i)-n_del)
-                        n_del+=1
+                        bd.del_v(int(i) - n_del)
+                        n_del += 1
 
                 if len(bd.h_line_mid) > 0:
                     invalid_h = invalid_lines(bd.h_line_mid, grid_w)
                     n_del = 0
                     # print('invalid_h', invalid_h)
                     for i in invalid_h:
-                        bd.del_h(int(i)-n_del)
-                        n_del+=1
+                        bd.del_h(int(i) - n_del)
+                        n_del += 1
 
+                bd.calc_line_diff()
                 print('processed')
                 print((nr, nc))
                 bd.print()
                 for [x1, x2] in bd.v_line:
                     y1, y2 = col, col + block_size
                     # print(x1, y1, x2, y2)
-                    cv2.line(grid_cleaner, (x1, y1), (x2, y2), 0, 1)
+                    cv2.line(grid_cleaner, (x1, y1), (x2, y2), 0, 3)
                 for [y1, y2] in bd.h_line:
                     x1, x2 = row + block_size, row
                     # print(x1, y1, x2, y2)
-                    cv2.line(grid_cleaner, (x1, y1), (x2, y2), 0, 1)
+                    cv2.line(grid_cleaner, (x1, y1), (x2, y2), 0, 3)
             else:
                 continue
                 # print('block not found', nr, nc)
