@@ -40,8 +40,21 @@ for file in flist:
     h, w, _ = img.shape
     print("w:", w, "h:", h)
 
-    blur = cv2.GaussianBlur(img, (3, 3), 0)
+    # blur = cv2.GaussianBlur(img, (5, 5), 0)
     # cv2.imshow('blur', cv2.pyrDown(blur))
+    # cv2.waitKey(0)
+
+    denoise = cv2.fastNlMeansDenoisingColored(img, None, 5, 5, 5, 11)
+    # cv2.imshow('denoise', cv2.pyrDown(denoise))
+    # cv2.waitKey(0)
+
+    kernel_h = np.array([[0,0,0],[1,1,1],[0,0,0]], np.uint8)
+    kernel_v = np.array([[0,1,0],[0,1,0],[0,1,0]], np.uint8)
+    erode_h = cv2.erode(denoise, kernel_h)
+    # cv2.imshow('erode_h', cv2.pyrDown(erode_h))
+    # cv2.waitKey(0)
+    erode_v = cv2.erode(erode_h, kernel_v)
+    # cv2.imshow('erode_v', cv2.pyrDown(erode_v))
     # cv2.waitKey(0)
 
     block_size_w = w // num_blocks_h
@@ -54,7 +67,7 @@ for file in flist:
     grid = np.ones((h, w), np.uint8) * 255
     for row in range(0, w, block_size_w // 2):
         for col in range(0, h, block_size_h // 2):
-            block = blur[col:col + block_size_h, row:row + block_size_w]
+            block = denoise[col:col + block_size_h, row:row + block_size_w]
             # cv2.imshow('block', block)
             # cv2.waitKey(0)
             norm = cv2.normalize(block, None, 0, 255, cv2.NORM_MINMAX)
