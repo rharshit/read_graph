@@ -18,22 +18,24 @@ def clean(block_details, h, w, block_size):
             if (nr, nc) in block_details_corrected.keys():
                 bd = block_details_corrected[(nr, nc)]
                 lh, lv = 0, 0
+                # print()
+                # print()
                 # print('block', nr, nc)
                 # bd.print()
                 while lv < len(bd.v_line_mid) - 1:
                     # print('v', lv)
-                    if bd.v_line_mid[lv + 1] - bd.v_line_mid[lv] <= grid_h // 4:
+                    if bd.v_line_mid[lv + 1] - bd.v_line_mid[lv] <= grid_h / 3:
                         ((a1, b1), (a2, b2)) = (bd.v_line[lv], bd.v_line[lv + 1])
-                        bd.v_line[lv] = ((a1 + a2) // 2, (b1 + b2) // 2)
+                        bd.v_line[lv] = ((a1 + a2) / 2, (b1 + b2) / 2)
                         # bd.v_line_mid = [(a+b)/2 for a, b in bd.v_line[v]]
                         bd.del_v(lv + 1)
                     else:
                         lv += 1
                 while lh < len(bd.h_line_mid) - 1:
                     # print('h', lh)
-                    if bd.h_line_mid[lh + 1] - bd.h_line_mid[lh] <= grid_w // 4:
+                    if bd.h_line_mid[lh + 1] - bd.h_line_mid[lh] <= grid_w / 3:
                         ((a1, b1), (a2, b2)) = (bd.h_line[lh], bd.h_line[lh + 1])
-                        bd.h_line[lh] = ((a1 + a2) // 2, (b1 + b2) // 2)
+                        bd.h_line[lh] = ((a1 + a2) / 2, (b1 + b2) / 2)
                         # bd.h_line_mid = [(a+b)/2 for a, b in bd.h_line[h]]
                         bd.del_h(lh + 1)
                     else:
@@ -214,6 +216,7 @@ def clean(block_details, h, w, block_size):
                     x1, x2 = row + block_size, row
                     # print(x1, y1, x2, y2)
                     cv2.line(grid_cleaner, (int(x1), int(y1)), (int(x2), int(y2)), 0, 1)
+                block_details_corrected[(nr, nc)] = bd
             else:
                 continue
                 # print('block not found', nr, nc)

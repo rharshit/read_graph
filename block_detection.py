@@ -202,10 +202,18 @@ for file in flist:
             self.calc_diff_y()
 
         def merge_prob(self):
-            self.v_line_mid = self.prob_v_line_mid
-            self.h_line_mid = self.prob_h_line_mid
-            self.v_line = self.prob_v_line
-            self.h_line = self.prob_h_line
+            for item in self.prob_v_line:
+                self.v_line.append(item)
+            for item in self.prob_h_line:
+                self.h_line.append(item)
+
+            self.v_line.sort()
+            self.h_line.sort()
+
+            self.v_line_mid = [(a + b) / 2 for (a, b) in self.v_line]
+            self.h_line_mid = [(a + b) / 2 for (a, b) in self.h_line]
+
+            self.calc_line_diff()
 
             self.prob_v_line_mid = []
             self.prob_h_line_mid = []
@@ -243,7 +251,6 @@ for file in flist:
 
     block_details = {}
     max_num_blocks = 15
-
 
     block_size = int(max(w, h) // max_num_blocks)
 
@@ -404,16 +411,16 @@ for file in flist:
                                 angle) <= angle_median_v + angle_deviation_threshold and rho in separate_rho_v:
                             # print('vert_line')
                             x1 = block_size
-                            y1 = int(y0 - abs((x0 - x1) / s) * c)
+                            y1 = y0 - abs((x0 - x1) / s) * c
                             x2 = 0
-                            y2 = int(y0 + abs((x2 - x0) / s) * c)
+                            y2 = y0 + abs((x2 - x0) / s) * c
                             # print('v_coord', x1, y1, x2, y2)
                             # bd.h_line_start.append(int((nc * step) + y1))
                             # bd.h_line_end.append(int((nc * step) + y2))
                             # bd.h_line_mid.append(int((nc * step) + (y1 + y2)/2))
                             bd.h_line.append((int((nc * step) + y1), int((nc * step) + y2)))
                             block_rho_v.append(rho)
-                            cv2.line(block_grid_bgr, (x1, y1), (x2, y2), (0, 255, 0), 4)
+                            cv2.line(block_grid_bgr, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 4)
                             # cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
                             #          (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
@@ -422,16 +429,16 @@ for file in flist:
                                 angle) <= angle_median_h + angle_deviation_threshold and rho in separate_rho_h:
                             # print('hori_line')
                             y1 = 0
-                            x1 = int(x0 + ((y0 - y1) / c) * s)
+                            x1 = x0 + ((y0 - y1) / c) * s
                             y2 = block_size
-                            x2 = int(x0 - ((y2 - y1) / c) * s)
+                            x2 = x0 - ((y2 - y1) / c) * s
                             # print('h_coord', x1, y1, x2, y2)
                             # bd.v_line_start.append(int((nr * step) + x1))
                             # bd.v_line_end.append(int((nr * step) + x2))
                             # bd.v_line_mid.append(int((nr * step) + (x1 + x2)/2))
                             bd.v_line.append((int((nr * step) + x1), int((nr * step) + x2)))
                             block_rho_h.append(rho)
-                            cv2.line(block_grid_bgr, (x1, y1), (x2, y2), (255, 0, 0), 4)
+                            cv2.line(block_grid_bgr, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 4)
                             # cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
                             #          (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
@@ -510,10 +517,12 @@ for file in flist:
 
     print('cleaning')
 
-    itrs = 3
+    itrs = 5
+
 
 
     block_details_curr = copy.deepcopy(block_details)
+    block_details_fin = None
 
     for itr in range(itrs):
         print('iteration', itr)
@@ -549,7 +558,25 @@ for file in flist:
                 block_details_align[key] = val
 
         block_details_curr = copy.deepcopy(block_details_align)
-        cv2.waitKey(0)
+        block_details_fin = copy.deepcopy(block_details_clean)
+
+    fin = np.ones((h, w), np.uint8) * 255
+    for nr in range(0, w // step + 1):
+        row = nr * step
+        for nc in range(0, h // step + 1):
+            col = nc * step
+            if (nr, nc) in block_details_fin.keys():
+                bd = block_details_fin[(nr, nc)]
+                for [x1, x2] in bd.v_line:
+                    y1, y2 = col, col + block_size
+                    # print(x1, y1, x2, y2)
+                    cv2.line(fin, (int(x1), int(y1)), (int(x2), int(y2)), 0, 3)
+                for [y1, y2] in bd.h_line:
+                    x1, x2 = row + block_size, row
+                    # print(x1, y1, x2, y2)
+                    cv2.line(fin, (int(x1), int(y1)), (int(x2), int(y2)), 0, 3)
+    cv2.imshow('fin_grid', cv2.pyrDown(fin))
+    # cv2.waitKey(0)
 
     # average_color = img.mean(axis=0).mean(axis=0)
     # print('avg color', average_color)
@@ -566,8 +593,8 @@ for file in flist:
     process_time = end_time - start_time
     print("processed in", process_time)
 
-    # cv2.waitKey(0)
+    cv2.waitKey(0)
 
-    # cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
 
 cv2.destroyAllWindows()

@@ -2,6 +2,7 @@ import cv2 as cv2
 import numpy as np
 import copy
 
+
 def align(block_details_corrected, h, w, block_size):
     step = int(block_size // 2)
     grid_h = block_details_corrected['grid_h']
@@ -11,7 +12,7 @@ def align(block_details_corrected, h, w, block_size):
         if orientation not in ['v', 'h']:
             print('invalid orientation')
             return
-        deviation = size // 5
+        deviation = size / 5
         if orientation is 'v':
             mid = bd1.v_line_mid[:]
             line = bd2.v_line[:]
@@ -31,7 +32,7 @@ def align(block_details_corrected, h, w, block_size):
         # print('line', line)
         # print('diff', diff)
         num_lines = block_size / size
-        produce_new_line = len(line) > num_lines // 3
+        produce_new_line = len(line) > num_lines / 3
         # print('num_lines', num_lines)
         # print('prod_line', produce_new_line)
         nl, nm = 0, 0
@@ -101,7 +102,7 @@ def align(block_details_corrected, h, w, block_size):
             col = nc * step
             if (nr, nc) in block_details_corrected_tblr.keys():
                 # print(nr, nc)
-                bd1 = block_details_corrected[(nr, nc)]
+                bd1 = block_details_corrected_tblr[(nr, nc)]
                 # print('bd1')
                 # bd1.print()
                 if (nr + 1, nc) in block_details_corrected_tblr.keys():
@@ -172,7 +173,7 @@ def align(block_details_corrected, h, w, block_size):
                         x1, x2 = row + block_size, row
                         # print(x1, y1, x2, y2)
                         cv2.line(grid_align, (x1, int(y1)), (x2, int(y2)), 0, 1)
-                block_details_corrected[(nr, nc)] = bd1
+                block_details_corrected_tblr[(nr, nc)] = bd1
                 # print('bd1')
                 # bd1.print_prob()
             else:
