@@ -582,12 +582,12 @@ for file in flist:
     # print('avg color', average_color)
     # avg_mask = np.ones((h, w, 3), np.uint8)
     # avg_mask[:] = average_color
-    # avg_mask = cv2.filter2D(img, -1, np.ones((101, 101), np.uint8))
-    # white_mask = cv2.bitwise_and(cv2.cvtColor(~grid_cleaner, cv2.COLOR_GRAY2BGR), avg_mask)
+    avg_mask = cv2.filter2D(img, -1, np.ones((25, 25), np.uint8))
+    white_mask = cv2.bitwise_and(cv2.cvtColor(~fin, cv2.COLOR_GRAY2BGR), avg_mask)
     # cv2.imshow('white_mask', cv2.pyrDown(white_mask))
-    #
-    # masked = cv2.bitwise_or(img, white_mask)
-    # cv2.imshow('masked', cv2.pyrDown(masked))
+
+    masked = cv2.bitwise_or(img, white_mask)
+    cv2.imshow('masked', cv2.pyrDown(masked))
 
     end_time = time.time()
     process_time = end_time - start_time
