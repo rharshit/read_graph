@@ -13,9 +13,6 @@ flist.sort()
 
 for file in flist:
     start_time = time.time()
-    print()
-    print()
-    print()
     print(file)
     image_type = 0
     if 'fhr' in file:
@@ -251,8 +248,10 @@ for file in flist:
 
     block_details = {}
     max_num_blocks = 15
+    min_num_blocks = 5
 
-    block_size = int(max(w, h) // max_num_blocks)
+    # block_size = int(max(w, h) // max_num_blocks)
+    block_size = int(min(w, h) // min_num_blocks)
 
     tmp_grid = copy.deepcopy(grid)
     tmp_grid = cv2.cvtColor(tmp_grid, cv2.COLOR_GRAY2BGR)
@@ -277,6 +276,17 @@ for file in flist:
             # print(nr, nc)
 
             bd = BlockDetail()
+
+            block = img[col:col + block_size, row:row + block_size]
+            fm = cv2.Laplacian(block, cv2.CV_64F).var()
+            block_area = block.shape[0] * block.shape[1]
+            if block_area / fm > 1000:
+                # print('relative fm', block_area / fm)
+                # focus_mode = str(int(block_area / fm)) if fm !=  0 else 'infinite'
+                # cv2.imshow('block ' + focus_mode, block)
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
+                continue
 
             block_grid = grid[col:col + block_size, row:row + block_size]
             block_grid_bgr = cv2.cvtColor(block_grid, cv2.COLOR_GRAY2BGR)
@@ -543,7 +553,7 @@ for file in flist:
                         cv2.line(grid_clean, (int(x1), int(y1)), (int(x2), int(y2)), 0, 1)
                 # cv2.imshow('grid_curr', cv2.pyrDown(grid_clean))
                 # cv2.waitKey(0)
-        cv2.imshow('grid_curr', cv2.pyrDown(grid_clean))
+        # cv2.imshow('grid_curr', cv2.pyrDown(grid_clean))
         # cv2.waitKey(0)
         block_details_clean = clean(block_details_curr, h, w, block_size)
         print('clean')

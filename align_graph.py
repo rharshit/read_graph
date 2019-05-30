@@ -183,7 +183,7 @@ def align(block_details_corrected, h, w, block_size):
             # cv2.imshow('align', cv2.pyrDown(grid_align))
             # cv2.waitKey(0)
 
-    cv2.imshow('align', cv2.pyrDown(grid_align))
+    # cv2.imshow('align', cv2.pyrDown(grid_align))
     # cv2.waitKey(0)
 
     return block_details_corrected_tblr

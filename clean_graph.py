@@ -223,7 +223,7 @@ def clean(block_details, h, w, block_size):
             # cv2.imshow('grid_cleaner', cv2.pyrDown(grid_cleaner))
             # cv2.waitKey(0)
 
-    cv2.imshow('grid_cleaner', cv2.pyrDown(grid_cleaner))
+    # cv2.imshow('grid_cleaner', cv2.pyrDown(grid_cleaner))
     # cv2.waitKey(0)
 
     return block_details_corrected
