@@ -211,11 +211,11 @@ def clean(block_details, h, w, block_size):
                 for [x1, x2] in bd.v_line:
                     y1, y2 = col, col + block_size
                     # print(x1, y1, x2, y2)
-                    cv2.line(grid_cleaner, (int(x1), int(y1)), (int(x2), int(y2)), 0, 1)
+                    cv2.line(grid_cleaner, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 1)
                 for [y1, y2] in bd.h_line:
                     x1, x2 = row + block_size, row
                     # print(x1, y1, x2, y2)
-                    cv2.line(grid_cleaner, (int(x1), int(y1)), (int(x2), int(y2)), 0, 1)
+                    cv2.line(grid_cleaner, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 1)
                 block_details_corrected[(nr, nc)] = bd
             else:
                 continue

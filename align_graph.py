@@ -117,11 +117,11 @@ def align(block_details_corrected, h, w, block_size):
                     for [x1, x2] in bd2.prob_v_line:
                         y1, y2 = col, col + block_size
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (int(x1), y1), (int(x2), y2), 0, 1)
+                        cv2.line(grid_align, (int(round(x1)), y1), (int(round(x2)), y2), 0, 1)
                     for [y1, y2] in bd2.prob_h_line:
                         x1, x2 = row + block_size + step, row + step
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (x1, int(y1)), (x2, int(y2)), 0, 1)
+                        cv2.line(grid_align, (x1, int(round(y1))), (x2, int(round(y2))), 0, 1)
                 if (nr - 1, nc) in block_details_corrected_tblr.keys():
                     # print((nr - 1, nc))
                     bd2 = block_details_corrected_tblr[(nr - 1, nc)]
@@ -134,11 +134,11 @@ def align(block_details_corrected, h, w, block_size):
                     for [x1, x2] in bd2.prob_v_line:
                         y1, y2 = col, col + block_size
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (int(x1), y1), (int(x2), y2), 0, 1)
+                        cv2.line(grid_align, (int(round(x1)), y1), (int(round(x2)), y2), 0, 1)
                     for [y1, y2] in bd2.prob_h_line:
                         x1, x2 = row + block_size - step, row - step
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (x1, int(y1)), (x2, int(y2)), 0, 1)
+                        cv2.line(grid_align, (x1, int(round(y1))), (x2, int(round(y2))), 0, 1)
                 if (nr, nc + 1) in block_details_corrected_tblr.keys():
                     # print((nr, nc + 1))
                     bd2 = block_details_corrected_tblr[(nr, nc + 1)]
@@ -151,11 +151,11 @@ def align(block_details_corrected, h, w, block_size):
                     for [x1, x2] in bd2.prob_v_line:
                         y1, y2 = col + step, col + block_size + step
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (int(x1), y1), (int(x2), y2), 0, 1)
+                        cv2.line(grid_align, (int(round(x1)), y1), (int(round(x2)), y2), 0, 1)
                     for [y1, y2] in bd2.prob_h_line:
                         x1, x2 = row + block_size, row
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (x1, int(y1)), (x2, int(y2)), 0, 1)
+                        cv2.line(grid_align, (x1, int(round(y1))), (x2, int(round(y2))), 0, 1)
                 if (nr, nc - 1) in block_details_corrected_tblr.keys():
                     # print((nr, nc - 1))
                     bd2 = block_details_corrected_tblr[(nr, nc - 1)]
@@ -168,11 +168,11 @@ def align(block_details_corrected, h, w, block_size):
                     for [x1, x2] in bd2.prob_v_line:
                         y1, y2 = col - step, col + block_size - step
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (int(x1), y1), (int(x2), y2), 0, 1)
+                        cv2.line(grid_align, (int(round(x1)), y1), (int(round(x2)), y2), 0, 1)
                     for [y1, y2] in bd2.prob_h_line:
                         x1, x2 = row + block_size, row
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (x1, int(y1)), (x2, int(y2)), 0, 1)
+                        cv2.line(grid_align, (x1, int(round(y1))), (x2, int(round(y2))), 0, 1)
                 block_details_corrected_tblr[(nr, nc)] = bd1
                 # print('bd1')
                 # bd1.print_prob()

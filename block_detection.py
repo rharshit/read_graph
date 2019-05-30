@@ -140,7 +140,7 @@ for file in flist:
             # cv2.imshow('tmp', cv2.pyrDown(tmp))
             # cv2.imshow('grid', cv2.pyrDown(grid))
             # cv2.imshow('lines', norm)
-            # cv2.waitKey(0)
+            # cv2.waitKey(0)i
 
 
     # cv2.imshow('img', cv2.pyrDown(img))
@@ -247,11 +247,11 @@ for file in flist:
 
 
     block_details = {}
-    max_num_blocks = 15
-    min_num_blocks = 5
+    max_num_blocks = 10
+    min_num_blocks = 4
 
-    # block_size = int(max(w, h) // max_num_blocks)
-    block_size = int(min(w, h) // min_num_blocks)
+    block_size = int(max(w, h) // max_num_blocks)
+    # block_size = int(min(w, h) // min_num_blocks)
 
     tmp_grid = copy.deepcopy(grid)
     tmp_grid = cv2.cvtColor(tmp_grid, cv2.COLOR_GRAY2BGR)
@@ -428,9 +428,9 @@ for file in flist:
                             # bd.h_line_start.append(int((nc * step) + y1))
                             # bd.h_line_end.append(int((nc * step) + y2))
                             # bd.h_line_mid.append(int((nc * step) + (y1 + y2)/2))
-                            bd.h_line.append((int((nc * step) + y1), int((nc * step) + y2)))
+                            bd.h_line.append(((nc * step) + y1, (nc * step) + y2))
                             block_rho_v.append(rho)
-                            cv2.line(block_grid_bgr, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 0), 4)
+                            cv2.line(block_grid_bgr, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), (0, 255, 0), 4)
                             # cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
                             #          (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
@@ -446,9 +446,9 @@ for file in flist:
                             # bd.v_line_start.append(int((nr * step) + x1))
                             # bd.v_line_end.append(int((nr * step) + x2))
                             # bd.v_line_mid.append(int((nr * step) + (x1 + x2)/2))
-                            bd.v_line.append((int((nr * step) + x1), int((nr * step) + x2)))
+                            bd.v_line.append(((nr * step) + x1, (nr * step) + x2))
                             block_rho_h.append(rho)
-                            cv2.line(block_grid_bgr, (int(x1), int(y1)), (int(x2), int(y2)), (255, 0, 0), 4)
+                            cv2.line(block_grid_bgr, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), (255, 0, 0), 4)
                             # cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
                             #          (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
@@ -546,11 +546,11 @@ for file in flist:
                     for [x1, x2] in bd.v_line:
                         y1, y2 = col, col + block_size
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_clean, (int(x1), int(y1)), (int(x2), int(y2)), 0, 1)
+                        cv2.line(grid_clean, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 1)
                     for [y1, y2] in bd.h_line:
                         x1, x2 = row + block_size, row
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_clean, (int(x1), int(y1)), (int(x2), int(y2)), 0, 1)
+                        cv2.line(grid_clean, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 1)
                 # cv2.imshow('grid_curr', cv2.pyrDown(grid_clean))
                 # cv2.waitKey(0)
         # cv2.imshow('grid_curr', cv2.pyrDown(grid_clean))
@@ -580,11 +580,11 @@ for file in flist:
                 for [x1, x2] in bd.v_line:
                     y1, y2 = col, col + block_size
                     # print(x1, y1, x2, y2)
-                    cv2.line(fin, (int(x1), int(y1)), (int(x2), int(y2)), 0, 3)
+                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 3)
                 for [y1, y2] in bd.h_line:
                     x1, x2 = row + block_size, row
                     # print(x1, y1, x2, y2)
-                    cv2.line(fin, (int(x1), int(y1)), (int(x2), int(y2)), 0, 3)
+                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 3)
     cv2.imshow('fin_grid', cv2.pyrDown(fin))
     # cv2.waitKey(0)
 
