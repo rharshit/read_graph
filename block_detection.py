@@ -3,6 +3,8 @@ import numpy as np
 import copy
 import glob
 import time
+from clean_graph import clean
+from align_graph import align
 from statistics import mean, median, mode
 
 # flist = glob.glob("graphs/*_*.jpg")
@@ -152,12 +154,12 @@ for file in flist:
     class BlockDetail:
         def __init__(self):
             # actual values
-            self.v_line_start = []
-            self.v_line_end = []
+            # self.v_line_start = []
+            # self.v_line_end = []
             self.v_line_mid = []
             self.v_line = []
-            self.h_line_start = []
-            self.h_line_end = []
+            # self.h_line_start = []
+            # self.h_line_end = []
             self.h_line_mid = []
             self.h_line = []
             self.v_angle = None
@@ -166,12 +168,12 @@ for file in flist:
             self.diff_y = None  # y1-y2
 
             # probable values
-            self.prob_v_line_start = []
-            self.prob_v_line_end = []
+            # self.prob_v_line_start = []
+            # self.prob_v_line_end = []
             self.prob_v_line_mid = []
             self.prob_v_line = []
-            self.prob_h_line_start = []
-            self.prob_h_line_end = []
+            # self.prob_h_line_start = []
+            # self.prob_h_line_end = []
             self.prob_h_line_mid = []
             self.prob_h_line = []
             self.prob_v_angle = None
@@ -198,6 +200,17 @@ for file in flist:
         def calc_line_diff(self):
             self.calc_diff_x()
             self.calc_diff_y()
+
+        def merge_prob(self):
+            self.v_line_mid = self.prob_v_line_mid
+            self.h_line_mid = self.prob_h_line_mid
+            self.v_line = self.prob_v_line
+            self.h_line = self.prob_h_line
+
+            self.prob_v_line_mid = []
+            self.prob_h_line_mid = []
+            self.prob_v_line = []
+            self.prob_h_line = []
 
         def print(self):
             # print('v_line_start', self.v_line_start)
@@ -236,7 +249,7 @@ for file in flist:
 
     tmp_grid = copy.deepcopy(grid)
     tmp_grid = cv2.cvtColor(tmp_grid, cv2.COLOR_GRAY2BGR)
-    grid_clean = np.ones((h, w), np.uint8) * 255
+    # grid_clean = np.ones((h, w), np.uint8) * 255
 
     rho_diff_h = []
     rho_diff_v = []
@@ -401,8 +414,8 @@ for file in flist:
                             bd.h_line.append((int((nc * step) + y1), int((nc * step) + y2)))
                             block_rho_v.append(rho)
                             cv2.line(block_grid_bgr, (x1, y1), (x2, y2), (0, 255, 0), 4)
-                            cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
-                                     (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
+                            # cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
+                            #          (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
                             continue
                         elif angle_median_h - angle_deviation_threshold <= abs(
@@ -419,8 +432,8 @@ for file in flist:
                             bd.v_line.append((int((nr * step) + x1), int((nr * step) + x2)))
                             block_rho_h.append(rho)
                             cv2.line(block_grid_bgr, (x1, y1), (x2, y2), (255, 0, 0), 4)
-                            cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
-                                     (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
+                            # cv2.line(grid_clean, (int((nr * step) + x1), int((nc * step) + y1)),
+                            #          (int((nr * step) + x2), int((nc * step) + y2)), 0, 1)
                             # cv2.line(tmp_grid, (col + x1, row + y1), (col + x2, row + y2), 255, 1)
                             continue
                         else:
@@ -488,406 +501,55 @@ for file in flist:
 
     print("grid_size", grid_w, grid_h)
 
-    cv2.imshow('grid_clean', cv2.pyrDown(grid_clean))
+    block_details['grid_h'] = grid_h
+    block_details['grid_w'] = grid_w
+
+    # cv2.imshow('grid_clean', cv2.pyrDown(grid_clean))
     # cv2.imshow('tmp', cv2.pyrDown(tmp))
     # cv2.imshow('grid', cv2.pyrDown(tmp_grid))
 
     print('cleaning')
 
-    grid_cleaner = np.ones((h, w), np.uint8) * 255
-    block_details_corrected = copy.deepcopy(block_details)
-
-    for nr in range(0, w // step + 1):
-        row = nr * step
-        for nc in range(0, h // step + 1):
-            col = nc * step
-            if (nr, nc) in block_details_corrected.keys():
-                bd = block_details_corrected[(nr, nc)]
-                lh, lv = 0, 0
-                print('block', nr, nc)
-                bd.print()
-                while lv < len(bd.v_line_mid) - 1:
-                    # print('v', lv)
-                    if bd.v_line_mid[lv + 1] - bd.v_line_mid[lv] <= grid_h // 4:
-                        ((a1, b1), (a2, b2)) = (bd.v_line[lv], bd.v_line[lv + 1])
-                        bd.v_line[lv] = ((a1 + a2) // 2, (b1 + b2) // 2)
-                        # bd.v_line_mid = [(a+b)/2 for a, b in bd.v_line[v]]
-                        bd.del_v(lv + 1)
-                    else:
-                        lv += 1
-                while lh < len(bd.h_line_mid) - 1:
-                    # print('h', lh)
-                    if bd.h_line_mid[lh + 1] - bd.h_line_mid[lh] <= grid_w // 4:
-                        ((a1, b1), (a2, b2)) = (bd.h_line[lh], bd.h_line[lh + 1])
-                        bd.h_line[lh] = ((a1 + a2) // 2, (b1 + b2) // 2)
-                        # bd.h_line_mid = [(a+b)/2 for a, b in bd.h_line[h]]
-                        bd.del_h(lh + 1)
-                    else:
-                        lh += 1
-                bd.v_line_mid = [(a + b) / 2 for (a, b) in bd.v_line]
-                bd.h_line_mid = [(a + b) / 2 for (a, b) in bd.h_line]
-
-                grid_deviation = 0.10
-
-                # lh, lv = 0, 0
-                # h_grid_deviation, v_grid_deviation = (x*grid_deviation for x in (grid_h, grid_w))
-                # valid = [False for x in bd.v_line_mid]
-                # first_fail = -1
-
-                def validate_lines(line_mid, grid_size):
-                    ll = 0
-                    print('grid_size', grid_size)
-                    deviation = grid_size * grid_deviation
-                    print('dev', deviation)
-                    valid = [False for x in line_mid]
-                    if len(valid) > 0:
-
-                        valid[ll] = True
-                    first_fail = -1
-                    line_mid1 = line_mid[:]
-                    to_del1 = []
-                    add_mid1 = []
-                    while ll < len(line_mid1) - 1:
-                        if not valid[ll]:
-                            if ll not in to_del1:
-                                to_del1.append(ll)
-                            ll += 1
-                            continue
-                        dist = abs(line_mid1[ll + 1] - line_mid1[ll])
-                        if grid_size - deviation <= dist <= grid_size + deviation or \
-                                2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation) or \
-                                3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                            valid[ll + 1] = True
-                            if 2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation):
-                                add_mid1.append((line_mid1[ll]+line_mid1[ll+1])/2)
-                            if 3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                add_mid1.append((2*line_mid1[ll]+line_mid1[ll+1])/3)
-                                add_mid1.append((line_mid1[ll]+2*line_mid1[ll+1])/3)
-                        else:
-                            if first_fail == -1:
-                                first_fail = ll + 1
-                            to_del1.append(ll + 1)
-                            if ll + 2 >= len(line_mid1):
-                                ll += 1
-                                continue
-                            dist = abs(line_mid1[ll + 2] - line_mid1[ll])
-                            if grid_size - deviation <= dist <= grid_size + deviation or \
-                                    2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation) or \
-                                    3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                valid[ll + 2] = True
-                                if 2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation):
-                                    add_mid1.append((line_mid1[ll] + line_mid1[ll + 2]) / 2)
-                                if 3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                    add_mid1.append((2 * line_mid1[ll] + line_mid1[ll + 2]) / 3)
-                                    add_mid1.append((line_mid1[ll] + 2 * line_mid1[ll + 2]) / 3)
-                            else:
-                                to_del1.append(ll + 2)
-                                if ll + 3 >= len(line_mid1):
-                                    ll += 1
-                                    continue
-                                dist = abs(line_mid1[ll + 3] - line_mid1[ll])
-                                if grid_size - deviation <= dist <= grid_size + deviation or \
-                                        2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation) or \
-                                        3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                    valid[ll + 3] = True
-                                    if 2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation):
-                                        add_mid1.append((line_mid1[ll] + line_mid1[ll + 3]) / 2)
-                                    if 3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                        add_mid1.append((2 * line_mid1[ll] + line_mid1[ll + 3]) / 3)
-                                        add_mid1.append((line_mid1[ll] + 2 * line_mid1[ll + 3]) / 3)
-                                else:
-                                    to_del1.append(ll + 3)
-                        ll += 1
-                    cnt1 = sum([1 if x == True else 0 for x in valid])
-
-                    if first_fail == -1 or cnt1 >= len(line_mid):
-                        return (to_del1, add_mid1)
-                    line_mid2 = line_mid[first_fail:]
-                    to_del2 = list(range(first_fail))
-                    add_mid2 = []
-                    valid = [False for x in line_mid2]
-                    valid[0] = True
-                    ll = 0
-                    while ll < len(line_mid2) - 1:
-                        # print('ll', ll)
-                        if not valid[ll]:
-                            if first_fail + ll not in to_del2:
-                                to_del2.append(first_fail + ll)
-                            ll += 1
-                            continue
-                        dist = abs(line_mid2[ll + 1] - line_mid2[ll])
-                        if grid_size - deviation <= dist <= grid_size + deviation or \
-                                2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation) or \
-                                3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                            valid[ll + 1] = True
-                            if 2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation):
-                                add_mid2.append((line_mid2[ll]+line_mid2[ll+1])/2)
-                            if 3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                add_mid2.append((2*line_mid2[ll]+line_mid2[ll+1])/3)
-                                add_mid2.append((line_mid2[ll]+2*line_mid2[ll+1])/3)
-                        else:
-                            if first_fail == -1:
-                                first_fail = ll + 1
-                            to_del2.append(first_fail + ll + 1)
-                            if ll + 2 >= len(line_mid2):
-                                ll += 1
-                                continue
-                            dist = abs(line_mid2[ll + 2] - line_mid2[ll])
-                            if grid_size - deviation <= dist <= grid_size + deviation or \
-                                    2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation) or \
-                                    3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                valid[ll + 2] = True
-                                if 2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation):
-                                    add_mid2.append((line_mid2[ll] + line_mid2[ll + 2]) / 2)
-                                if 3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                    add_mid2.append((2 * line_mid2[ll] + line_mid2[ll + 2]) / 3)
-                                    add_mid2.append((line_mid2[ll] + 2 * line_mid2[ll + 2]) / 3)
-                            else:
-                                to_del2.append(first_fail + ll + 2)
-                                if ll + 3 >= len(line_mid2):
-                                    ll += 1
-                                    continue
-                                dist = abs(line_mid2[ll + 3] - line_mid2[ll])
-                                if grid_size - deviation <= dist <= grid_size + deviation or \
-                                        2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation) or \
-                                        3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                    valid[ll + 3] = True
-                                    if 2 * (grid_size - deviation) <= dist <= 2 * (grid_size + deviation):
-                                        add_mid2.append((line_mid2[ll] + line_mid2[ll + 3]) / 2)
-                                    if 3 * (grid_size - deviation) <= dist <= 3 * (grid_size + deviation):
-                                        add_mid2.append((2 * line_mid2[ll] + line_mid2[ll + 3]) / 3)
-                                        add_mid2.append((line_mid2[ll] + 2 * line_mid2[ll + 3]) / 3)
-                                else:
-                                    to_del2.append(first_fail + ll + 3)
-                        ll += 1
-
-                    cnt2 = sum([1 if x == True else 0 for x in valid])
-                    return (to_del1, add_mid1) if cnt1 >= cnt2 else (to_del2, add_mid2)
+    itrs = 3
 
 
-                # if len(bd.v_line_mid) > 0:
-                invalid_v, add_v = validate_lines(bd.v_line_mid, grid_h)
-                n_del = 0
-                # print('invalid_v', invalid_v)
-                # print('add_v', add_v)
-                for i in invalid_v:
-                    bd.del_v(int(i) - n_del)
-                    n_del += 1
-                for m in add_v:
-                    bd.v_line_mid.append(m)
-                bd.v_line_mid.sort()
+    block_details_curr = copy.deepcopy(block_details)
 
-                # if len(bd.h_line_mid) > 0:
-                invalid_h, add_h = validate_lines(bd.h_line_mid, grid_w)
-                n_del = 0
-                # print('invalid_h', invalid_h)
-                # print('add_h', add_h)
-                for i in invalid_h:
-                    bd.del_h(int(i) - n_del)
-                    n_del += 1
-                for m in add_h:
-                    bd.h_line_mid.append(m)
-                bd.h_line_mid.sort()
-
-                bd.calc_line_diff()
-                # print('processed')
-                # bd.print()
-                # print()
-                # print()
-                for [x1, x2] in bd.v_line:
-                    y1, y2 = col, col + block_size
-                    # print(x1, y1, x2, y2)
-                    cv2.line(grid_cleaner, (x1, y1), (x2, y2), 0, 1)
-                for [y1, y2] in bd.h_line:
-                    x1, x2 = row + block_size, row
-                    # print(x1, y1, x2, y2)
-                    cv2.line(grid_cleaner, (x1, y1), (x2, y2), 0, 1)
-            else:
-                continue
-                # print('block not found', nr, nc)
-            # cv2.imshow('grid_cleaner', cv2.pyrDown(grid_cleaner))
-            # cv2.waitKey(0)
-
-    cv2.imshow('grid_cleaner', cv2.pyrDown(grid_cleaner))
-
-    def align_block(bd1, bd2, orientation, index, size):
-        if orientation not in ['v', 'h']:
-            print('invalid orientation')
-            return
-        deviation = size // 5
-        if orientation is 'v':
-            mid = bd1.v_line_mid[:]
-            line = bd2.v_line[:]
-            diff = bd2.diff_x
-            fin_mid = bd1.prob_v_line_mid
-            fin_line = bd2.prob_v_line
-        else:
-            mid = bd1.h_line_mid[:]
-            line = bd2.h_line[:]
-            diff = bd2.diff_y
-            fin_mid = bd1.prob_h_line_mid
-            fin_line = bd2.prob_h_line
-
-        print('size', size)
-        print('dev', deviation)
-        print('mid', mid)
-        print('line', line)
-        print('diff', diff)
-        num_lines = block_size / size
-        produce_new_line = len(line) > num_lines // 3
-        print('num_lines', num_lines)
-        print('prod_line', produce_new_line)
-        nl, nm = 0, 0
-        while nm < len(mid):
-            added = False
-            # print('nm', nm)
-            if nl < len(line):
-                while nl < len(line):
-                    # print('nl', nl)
-                    if nl >= len(line):
-                        break
-                    ln = line[nl]
-                    # print('ln', ln)
-                    delta = mid[nm] - ln[index]
-                    # print('delta', delta)
-                    if abs(delta) <= deviation:
-                        # print(':1')
-                        fin_line.append((ln[0] + delta, ln[1] + delta))
-                        added = True
-                    else:
-                        # print(':2')
-                        if delta < 0:
-                            # print(':3')
-                            break
-                    nl += 1
-            else:
-                # print(':4')
-                added = False
-            if added:
-                # print(':5')
-                fin_mid.append(mid[nm])
-            else:
-                # print(":6")
-                print('do nothing')
-                if diff is not None and produce_new_line:
-                    # print(':7')
-                    ln = None
-                    if index == 0:
-                        # print(':8')
-                        ln = (mid[nm], mid[nm] - diff)
-                    else:
-                        # print(':9')
-                        ln = (mid[nm] + diff, mid[nm])
-                    # print(':ln', ln)
-                    fin_line.append(ln)
-                    fin_mid.append(mid[nm])
-            nm += 1
-        print('fin_mid', fin_mid)
-        print('fin_line', fin_line)
-        if orientation is 'v':
-            # print(":1")
-            bd1.prob_v_line_mid = fin_mid
-            bd2.prob_v_line = fin_line
-        else:
-            # print(":2")
-            bd1.prob_h_line_mid = fin_mid
-            bd2.prob_h_line = fin_line
-        return
-
-
-    grid_align = np.ones((h, w), np.uint8) * 255
-
-    block_details_corrected_tblr = copy.deepcopy(block_details_corrected)  # top-bottom left-right
-    block_details_corrected_btrl = copy.deepcopy(block_details_corrected)  # bottom-top right-left
-
-    for nr in range(0, w // step + 1):
-        row = nr * step
-        for nc in range(0, h // step + 1):
-            col = nc * step
-            if (nr, nc) in block_details_corrected_tblr.keys():
-                print(nr, nc)
-                bd1 = block_details_corrected[(nr, nc)]
-                print('bd1')
-                bd1.print()
-                if (nr + 1, nc) in block_details_corrected_tblr.keys():
-                    print((nr + 1, nc))
-                    bd2 = block_details_corrected_tblr[(nr + 1, nc)]
-                    print('bd2')
-                    bd2.print()
-                    align_block(bd1, bd2, 'h', 1, grid_w)
-                    block_details_corrected_tblr[(nr + 1, nc)] = bd2
-                    print('bd2')
-                    bd2.print_prob()
-                    for [x1, x2] in bd2.prob_v_line:
+    for itr in range(itrs):
+        print('iteration', itr)
+        grid_clean = np.ones((h, w), np.uint8) * 255
+        for nr in range(0, w // step + 1):
+            row = nr * step
+            for nc in range(0, h // step + 1):
+                col = nc * step
+                if (nr, nc) in block_details_curr.keys():
+                    bd = block_details_curr[(nr, nc)]
+                    for [x1, x2] in bd.v_line:
                         y1, y2 = col, col + block_size
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (int(x1), y1), (int(x2), y2), 0, 1)
-                    for [y1, y2] in bd2.prob_h_line:
-                        x1, x2 = row + block_size + step, row + step
-                        # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (x1, int(y1)), (x2, int(y2)), 0, 1)
-                if (nr - 1, nc) in block_details_corrected_tblr.keys():
-                    print((nr - 1, nc))
-                    bd2 = block_details_corrected_tblr[(nr - 1, nc)]
-                    print('bd2')
-                    bd2.print()
-                    align_block(bd1, bd2, 'h', 0, grid_w)
-                    block_details_corrected_tblr[(nr - 1, nc)] = bd2
-                    print('bd2')
-                    bd2.print_prob()
-                    for [x1, x2] in bd2.prob_v_line:
-                        y1, y2 = col, col + block_size
-                        # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (int(x1), y1), (int(x2), y2), 0, 1)
-                    for [y1, y2] in bd2.prob_h_line:
-                        x1, x2 = row + block_size - step, row - step
-                        # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (x1, int(y1)), (x2, int(y2)), 0, 1)
-                if (nr, nc + 1) in block_details_corrected_tblr.keys():
-                    print((nr, nc + 1))
-                    bd2 = block_details_corrected_tblr[(nr, nc + 1)]
-                    print('bd2')
-                    bd2.print()
-                    align_block(bd1, bd2, 'v', 0, grid_h)
-                    block_details_corrected_tblr[(nr, nc + 1)] = bd2
-                    print('bd2')
-                    bd2.print_prob()
-                    for [x1, x2] in bd2.prob_v_line:
-                        y1, y2 = col + step, col + block_size + step
-                        # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (int(x1), y1), (int(x2), y2), 0, 1)
-                    for [y1, y2] in bd2.prob_h_line:
+                        cv2.line(grid_clean, (int(x1), int(y1)), (int(x2), int(y2)), 0, 1)
+                    for [y1, y2] in bd.h_line:
                         x1, x2 = row + block_size, row
                         # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (x1, int(y1)), (x2, int(y2)), 0, 1)
-                if (nr, nc - 1) in block_details_corrected_tblr.keys():
-                    print((nr, nc - 1))
-                    bd2 = block_details_corrected_tblr[(nr, nc - 1)]
-                    print('bd2')
-                    bd2.print()
-                    align_block(bd1, bd2, 'v', 1, grid_h)
-                    block_details_corrected_tblr[(nr, nc - 1)] = bd2
-                    print('bd2')
-                    bd2.print_prob()
-                    for [x1, x2] in bd2.prob_v_line:
-                        y1, y2 = col - step, col + block_size - step
-                        # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (int(x1), y1), (int(x2), y2), 0, 1)
-                    for [y1, y2] in bd2.prob_h_line:
-                        x1, x2 = row + block_size, row
-                        # print(x1, y1, x2, y2)
-                        cv2.line(grid_align, (x1, int(y1)), (x2, int(y2)), 0, 1)
-                block_details_corrected[(nr, nc)] = bd1
-                print('bd1')
-                bd1.print_prob()
-            else:
-                print('block not found')
-                continue
+                        cv2.line(grid_clean, (int(x1), int(y1)), (int(x2), int(y2)), 0, 1)
+                # cv2.imshow('grid_curr', cv2.pyrDown(grid_clean))
+                # cv2.waitKey(0)
+        cv2.imshow('grid_curr', cv2.pyrDown(grid_clean))
+        # cv2.waitKey(0)
+        block_details_clean = clean(block_details_curr, h, w, block_size)
+        print('clean')
+        block_details_align = align(block_details_clean, h, w, block_size)
+        print('align')
 
-            # cv2.imshow('align', cv2.pyrDown(grid_align))
-            # cv2.waitKey(0)
+        for key, val in block_details_align.items():
+            if isinstance(val, BlockDetail):
+                val.merge_prob()
+                # print(key)
+                # val.print()
+                block_details_align[key] = val
 
-    cv2.imshow('align', cv2.pyrDown(grid_align))
+        block_details_curr = copy.deepcopy(block_details_align)
+        cv2.waitKey(0)
 
     # average_color = img.mean(axis=0).mean(axis=0)
     # print('avg color', average_color)
@@ -904,7 +566,7 @@ for file in flist:
     process_time = end_time - start_time
     print("processed in", process_time)
 
-    cv2.waitKey(0)
+    # cv2.waitKey(0)
 
     # cv2.destroyAllWindows()
 
