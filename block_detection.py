@@ -8,12 +8,7 @@ from align_graph import align
 from blur_check import is_blur
 from statistics import mean, median, mode
 
-# flist = glob.glob("graphs/*_*.jpg")
-flist = glob.glob("graphs/sample_graph.jpg")
-flist.sort()
-
-for file in flist:
-    start_time = time.time()
+def detect_block(file):
     print(file)
     image_type = 0
     if 'fhr' in file:
@@ -22,7 +17,7 @@ for file in flist:
         image_type = 2
     if image_type == 0:
         print('sample')
-        continue
+        return None
 
     # fname = 'graphs/sample_graph.jpg'
 
@@ -32,7 +27,7 @@ for file in flist:
     if is_blur(img):
         print('blur image')
         print('skipping')
-        continue
+        return None
     else:
         print('processing', ('FHR' if image_type == 1 else 'UC'))
 
@@ -592,7 +587,24 @@ for file in flist:
                     x1, x2 = row + block_size, row
                     # print(x1, y1, x2, y2)
                     cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 3)
-    cv2.imshow('fin_grid', cv2.pyrDown(fin))
+
+    return fin
+
+
+flist = glob.glob("graphs/*_*.jpg")
+# flist = glob.glob("graphs/sample_graph.jpg")
+flist.sort()
+
+for file in flist:
+    start_time = time.time()
+
+    grid = detect_block(file)
+    if grid is None:
+        continue
+
+    img = cv2.imread(file)
+
+    # cv2.imshow('fin_grid', cv2.pyrDown(grid))
     # cv2.waitKey(0)
 
     # average_color = img.mean(axis=0).mean(axis=0)
@@ -600,7 +612,8 @@ for file in flist:
     # avg_mask = np.ones((h, w, 3), np.uint8)
     # avg_mask[:] = average_color
     avg_mask = cv2.filter2D(img, -1, np.ones((25, 25), np.uint8))
-    white_mask = cv2.bitwise_and(cv2.cvtColor(~fin, cv2.COLOR_GRAY2BGR), avg_mask)
+    white_mask = cv2.bitwise_and(cv2.cvtColor(~grid, cv2.COLOR_GRAY2BGR), avg_mask)
+    grid_mask = ~cv2.bitwise_and(cv2.cvtColor(~grid, cv2.COLOR_GRAY2BGR), ~img)
     # cv2.imshow('white_mask', cv2.pyrDown(white_mask))
 
     masked = cv2.bitwise_or(img, white_mask)
