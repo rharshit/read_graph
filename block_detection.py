@@ -5,6 +5,7 @@ import glob
 import time
 from clean_graph import clean
 from align_graph import align
+from blur_check import is_blur
 from statistics import mean, median, mode
 
 # flist = glob.glob("graphs/*_*.jpg")
@@ -21,20 +22,25 @@ for file in flist:
         image_type = 2
     if image_type == 0:
         print('sample')
-        # continue
-
-    print('processing', ('FHR' if image_type == 1 else 'UC'))
+        continue
 
     # fname = 'graphs/sample_graph.jpg'
+
+    img = cv2.imread(file)
+    cv2.imshow('img', cv2.pyrDown(img))
+
+    if is_blur(img):
+        print('blur image')
+        print('skipping')
+        continue
+    else:
+        print('processing', ('FHR' if image_type == 1 else 'UC'))
 
     num_blocks_h = 10
     num_blocks_v = 6
 
     angle_threshold_v = 75
     angle_threshold_h = 15
-
-    img = cv2.imread(file)
-    cv2.imshow('img', cv2.pyrDown(img))
 
     h, w, _ = img.shape
     print("w:", w, "h:", h)
@@ -141,7 +147,6 @@ for file in flist:
             # cv2.imshow('grid', cv2.pyrDown(grid))
             # cv2.imshow('lines', norm)
             # cv2.waitKey(0)i
-
 
     # cv2.imshow('img', cv2.pyrDown(img))
     # cv2.imshow('grid', cv2.pyrDown(grid))
@@ -527,15 +532,13 @@ for file in flist:
 
     print('cleaning')
 
-    itrs = 5
-
-
+    itrs = 2
 
     block_details_curr = copy.deepcopy(block_details)
     block_details_fin = None
 
     for itr in range(itrs):
-        print('iteration', itr)
+        # print('iteration', itr)
         grid_clean = np.ones((h, w), np.uint8) * 255
         for nr in range(0, w // step + 1):
             row = nr * step
@@ -556,9 +559,9 @@ for file in flist:
         # cv2.imshow('grid_curr', cv2.pyrDown(grid_clean))
         # cv2.waitKey(0)
         block_details_clean = clean(block_details_curr, h, w, block_size)
-        print('clean')
+        # print('clean')
         block_details_align = align(block_details_clean, h, w, block_size)
-        print('align')
+        # print('align')
 
         for key, val in block_details_align.items():
             if isinstance(val, BlockDetail):
@@ -580,11 +583,11 @@ for file in flist:
                 for [x1, x2] in bd.v_line:
                     y1, y2 = col, col + block_size
                     # print(x1, y1, x2, y2)
-                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 3)
+                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 5)
                 for [y1, y2] in bd.h_line:
                     x1, x2 = row + block_size, row
                     # print(x1, y1, x2, y2)
-                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 3)
+                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 5)
     cv2.imshow('fin_grid', cv2.pyrDown(fin))
     # cv2.waitKey(0)
 
