@@ -617,7 +617,28 @@ for file in flist:
     # cv2.imshow('white_mask', cv2.pyrDown(white_mask))
 
     masked = cv2.bitwise_or(img, white_mask)
-    cv2.imshow('masked', cv2.pyrDown(masked))
+    # cv2.imshow('masked', cv2.pyrDown(masked))
+    # cv2.imshow('grid_masked', cv2.pyrDown(grid_mask))
+
+    grid_mask_hls = cv2.cvtColor(grid_mask, cv2.COLOR_BGR2HLS)
+    # cv2.imshow('grid_hls', cv2.pyrDown(grid_mask_hls))
+
+    thresh_s = 75
+    thresh_l = 150
+    lower = np.array([0, 0, 0])
+    upper = np.array([255, thresh_l, thresh_s])
+
+    grid_noise = ~cv2.cvtColor(cv2.inRange(grid_mask, lower, upper), cv2.COLOR_GRAY2BGR)
+    # cv2.imshow('noise', cv2.pyrDown(grid_noise))
+
+    grid_mask_clean = ~cv2.bitwise_and(grid_noise, ~grid_mask)
+    cv2.imshow('grid_mask_clean', cv2.pyrDown(grid_mask_clean))
+
+    masked_filled = cv2.bitwise_and(masked, grid_noise)
+    # cv2.imshow('masked_filled', cv2.pyrDown(masked_filled))
+
+    mask_close = cv2.morphologyEx(masked_filled, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
+    cv2.imshow('mask_close', cv2.pyrDown(mask_close))
 
     end_time = time.time()
     process_time = end_time - start_time
