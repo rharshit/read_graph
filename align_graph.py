@@ -4,7 +4,7 @@ import copy
 
 
 def align(block_details_corrected, h, w, block_size):
-    step = int(block_size // 2)
+    step = int(block_size // 4)
     grid_h = block_details_corrected['grid_h']
     grid_w = block_details_corrected['grid_w']
 

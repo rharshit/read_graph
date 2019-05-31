@@ -252,6 +252,7 @@ for file in flist:
 
 
     block_details = {}
+
     max_num_blocks = 10
     min_num_blocks = 4
 
@@ -265,7 +266,7 @@ for file in flist:
     rho_diff_h = []
     rho_diff_v = []
 
-    step = int(block_size // 2)
+    step = int(block_size // 4)
 
     # print('step', step)
 
@@ -283,6 +284,8 @@ for file in flist:
             bd = BlockDetail()
 
             block = img[col:col + block_size, row:row + block_size]
+            if block.shape[0] <= 3 or block.shape[1] <= 3:
+                continue
             fm = cv2.Laplacian(block, cv2.CV_64F).var()
             block_area = block.shape[0] * block.shape[1]
             if block_area / fm > 1000:
@@ -562,6 +565,7 @@ for file in flist:
         # print('clean')
         block_details_align = align(block_details_clean, h, w, block_size)
         # print('align')
+        # cv2.waitKey(0)
 
         for key, val in block_details_align.items():
             if isinstance(val, BlockDetail):
@@ -583,11 +587,11 @@ for file in flist:
                 for [x1, x2] in bd.v_line:
                     y1, y2 = col, col + block_size
                     # print(x1, y1, x2, y2)
-                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 5)
+                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 3)
                 for [y1, y2] in bd.h_line:
                     x1, x2 = row + block_size, row
                     # print(x1, y1, x2, y2)
-                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 5)
+                    cv2.line(fin, (int(round(x1)), int(round(y1))), (int(round(x2)), int(round(y2))), 0, 3)
     cv2.imshow('fin_grid', cv2.pyrDown(fin))
     # cv2.waitKey(0)
 
@@ -604,10 +608,10 @@ for file in flist:
 
     end_time = time.time()
     process_time = end_time - start_time
-    print("processed in", process_time)
+    print("processed in", round(process_time, 2))
 
     cv2.waitKey(0)
 
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
 cv2.destroyAllWindows()

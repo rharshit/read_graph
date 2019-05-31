@@ -4,7 +4,7 @@ import copy
 
 
 def clean(block_details, h, w, block_size):
-    step = int(block_size // 2)
+    step = int(block_size // 4)
     grid_h = block_details['grid_h']
     grid_w = block_details['grid_w']
 
